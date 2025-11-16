@@ -1,0 +1,49 @@
+﻿version: '3.9'
+
+services:
+  consul:
+    image: hashicorp/consul:1.15.4
+    command: agent -server -bootstrap -ui -client=0.0.0.0
+    ports:
+      - "8500:8500"
+    networks:
+      - mynet
+
+  abnomalydetector:
+    image: ${DOCKER_REGISTRY-}abnomalydetector
+    build:
+      context: .
+      dockerfile: AbnomalyDetector/Dockerfile
+    environment:
+      - SERVICE_NAME=abnomalydetector
+      - SERVICE_PORT=8087
+      - SERVICE_ADDRESS=abnomalydetector    
+      - CONSUL_HTTP_ADDR=http://consul:8500
+    depends_on:
+      - consul
+    ports:
+      - "8087:8087"
+    networks:
+      - mynet
+
+  apigateway:
+    image: ${DOCKER_REGISTRY-}apigateway
+    build:
+      context: .
+      dockerfile: API.Gateway/Dockerfile
+    environment:
+      - SERVICE_NAME=apigateway
+      - SERVICE_PORT=8080
+      - SERVICE_ADDRESS=apigateway         
+      - CONSUL_HTTP_ADDR=http://consul:8500
+    depends_on:
+      - consul
+      - abnomalydetector
+    ports:
+      - "8080:8080"
+    networks:
+      - mynet
+
+networks:
+  mynet:
+    driver: bridge
