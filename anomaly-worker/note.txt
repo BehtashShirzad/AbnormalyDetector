@@ -1,0 +1,13 @@
+docker pull dpage/pgadmin4:latest
+pip install pika psycopg2-binary
+docker pull postgres:14.20-alpine3.23
+
+CREATE TABLE anormal_events (
+    id SERIAL PRIMARY KEY,
+    service_name TEXT NOT NULL,
+    description TEXT NOT NULL,
+    severity SMALLINT NOT NULL,
+    occurred_at TIMESTAMP NOT NULL,
+    request JSONB NULL,
+    created_at TIMESTAMP DEFAULT now()
+);

@@ -1,3 +1,0 @@
-docker pull dpage/pgadmin4:snapshot
-pip install pika psycopg2-binary
-docker pull postgres:14.20-alpine3.23

@@ -1,44 +1,96 @@
-﻿version: '3.9'
+﻿services:
 
-services:
-  consul:
-    image: hashicorp/consul:1.15.4
-    command: agent -server -bootstrap -ui -client=0.0.0.0
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_DB: security
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     ports:
-      - "8500:8500"
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - mynet
 
-  abnomalydetector:
-    image: ${DOCKER_REGISTRY-}abnomalydetector
-    build:
-      context: .
-      dockerfile: AbnomalyDetector/Dockerfile
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin
+    restart: always
     environment:
-      - SERVICE_NAME=abnomalydetector
-      - SERVICE_PORT=8087
-      - SERVICE_ADDRESS=abnomalydetector    
-      - CONSUL_HTTP_ADDR=http://consul:8500
-    depends_on:
-      - consul
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
     ports:
-      - "8087:8087"
+      - "5050:80"
+    depends_on:
+      - postgres
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    networks:
+      - mynet
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - mynet
+
+  anomaly-worker:
+    container_name: anomaly-worker
+    image: anomaly-worker-image
+    build:
+      context: ./anomaly-worker
+      dockerfile: Dockerfile
+    depends_on:
+      - rabbitmq
+      - postgres
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASS: guest
+      QUEUE_NAME: anormal.events.queue
+      EXCHANGE: anormal.events
+      ROUTING_KEY: anormal.event
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: security
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     networks:
       - mynet
 
   apigateway:
-    image: ${DOCKER_REGISTRY-}apigateway
+    image: apigateway-image
     build:
       context: .
       dockerfile: API.Gateway/Dockerfile
     environment:
-      - SERVICE_NAME=apigateway
-      - SERVICE_PORT=8080
-      - SERVICE_ADDRESS=apigateway         
-      - CONSUL_HTTP_ADDR=http://consul:8500
+      SERVICE_NAME: apigateway
+      SERVICE_PORT: 8080
+      SERVICE_ADDRESS: apigateway
+      RabbitMq__HostName: rabbitmq
+      RabbitMq__Port: 5672
+      RabbitMq__Password: guest
+      RabbitMq__UserName: guest
+      RabbitMq__ExchangeName: anormal.events
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: security
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     depends_on:
-      - consul
-      - abnomalydetector
+      - rabbitmq
+      - postgres
     ports:
       - "8080:8080"
     networks:
@@ -47,3 +99,7 @@ services:
 networks:
   mynet:
     driver: bridge
+
+volumes:
+  postgres-data:
+  pgadmin-data:

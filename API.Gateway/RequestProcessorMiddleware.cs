@@ -32,10 +32,12 @@ public class RequestProcessorMiddleware
     public async Task InvokeAsync(HttpContext context)
     {
         var ip = GetClientIp(context);
+        var request = context.Request;
+        var fullUrl =
+$"{request.Scheme}://{request.Host}{request.Path}{request.QueryString}";
+        await CheckRateLimitAsync(ip, fullUrl);
 
-        await CheckRateLimitAsync(ip);
-
-        if (await DetectAndHandleSqlInjectionAsync(context))
+        if (await DetectAndHandleSqlInjectionAsync(context, ip))
             return;  
 
         await _next(context);
@@ -44,7 +46,7 @@ public class RequestProcessorMiddleware
     // ============================
     // Rate limiting
     // ============================
-    private async Task CheckRateLimitAsync(string ip)
+    private async Task CheckRateLimitAsync(string ip,string serviceName)
     {
         var cacheKey = $"REQ_RATE_{ip}";
 
@@ -65,7 +67,7 @@ public class RequestProcessorMiddleware
             ip,
             counter);
 
-        await _notifierClient.RaiseEvent(new(
+        await _notifierClient.RaiseEvent(new(serviceName,
             ip,
             $"Rate limit exceeded: {counter} requests in {SecurityConstants.Window.TotalSeconds}s",
             Events.Severity.Warning,
@@ -75,7 +77,7 @@ public class RequestProcessorMiddleware
     // ============================
     // SQL Injection detection
     // ============================
-    private async Task<bool> DetectAndHandleSqlInjectionAsync(HttpContext context)
+    private async Task<bool> DetectAndHandleSqlInjectionAsync(HttpContext context,string ip)
     {
         var request = context.Request;
 
@@ -104,7 +106,7 @@ public class RequestProcessorMiddleware
             request.QueryString.ToString());
 
         await _notifierClient.RaiseEvent(new(
-           fullUrl,
+           fullUrl, ip,
             result.AnormalValue,
             Events.Severity.Attack,
             DateTime.UtcNow));

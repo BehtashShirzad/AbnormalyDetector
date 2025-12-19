@@ -6,20 +6,25 @@ using static IdentityModel.ClaimComparer;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Swagger
-builder.Services.Configure<APIGatewayOptions>(builder.Configuration);
+ 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
 builder.Services.AddSingleton<IConnection>(sp =>
 {
-    var opt = sp.GetRequiredService<IOptions<APIGatewayOptions>>();
+    var config = sp.GetRequiredService<IConfiguration>();
+
+    var host = config["RabbitMq:HostName"] ?? "localhost";
+    var port = int.Parse(config["RabbitMq:Port"] ?? "5672");
+    var user = config["RabbitMq:UserName"] ?? "guest";
+    var pass = config["RabbitMq:Password"] ?? "guest";
 
     var factory = new ConnectionFactory
     {
-        HostName = opt.Value.Rabbitmq.HostName,
-        UserName = opt.Value.Rabbitmq.UserName,
-        Password = opt.Value.Rabbitmq.Password,
-        Port = opt.Value.Rabbitmq.Port,
+        HostName = host,
+        UserName = user,
+        Password = pass,
+        Port = port,
     };
 
     return factory.CreateConnectionAsync().GetAwaiter().GetResult();
