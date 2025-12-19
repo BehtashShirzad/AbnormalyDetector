@@ -1,0 +1,29 @@
+[
+  {
+    "ContainingType": "API.Gateway.Controller.TestController",
+    "Method": "Test",
+    "RelativePath": "api/test/{testParam}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "testParam",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "test",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Void",
+        "MediaTypes": [],
+        "StatusCode": 200
+      }
+    ]
+  }
+]

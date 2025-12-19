@@ -1,31 +1,47 @@
 ﻿using API.Gateway;
-using Consul;
+using Microsoft.Extensions.Options;
+using RabbitMQ.Client;
 using Yarp.ReverseProxy.Configuration;
+using static IdentityModel.ClaimComparer;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+// Swagger
+builder.Services.Configure<APIGatewayOptions>(builder.Configuration);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddSingleton<IConsulClient, ConsulClient>(p => new ConsulClient(cfg =>
+builder.Services.AddSingleton<IConnection>(sp =>
 {
-    cfg.Address = new Uri("http://localhost:8500"); // آدرس Consul
-}));
-builder.Services.AddReverseProxy()
-    .LoadFromMemory(new List<Yarp.ReverseProxy.Configuration.RouteConfig>(), new List<ClusterConfig>());
-builder.Services.AddHostedService<ConsulYarpUpdater>();
-var app = builder.Build();
+    var opt = sp.GetRequiredService<IOptions<APIGatewayOptions>>();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+    var factory = new ConnectionFactory
+    {
+        HostName = opt.Value.Rabbitmq.HostName,
+        UserName = opt.Value.Rabbitmq.UserName,
+        Password = opt.Value.Rabbitmq.Password,
+        Port = opt.Value.Rabbitmq.Port,
+    };
+
+    return factory.CreateConnectionAsync().GetAwaiter().GetResult();
+});
+
+builder.Services.AddSingleton<RabbitMqClient>();
+builder.Services.AddMemoryCache();
+builder.Services.AddControllers();
+// YARP - Load from appsettings.json
+builder.Services
+    .AddReverseProxy()
+    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
+
+var app = builder.Build();
+app.UseMiddleware<RequestProcessorMiddleware>();
+// Middleware
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
-app.MapReverseProxy();
 
+// Map YARP
+app.MapReverseProxy();
+app.MapControllers();
 app.Run();
- 

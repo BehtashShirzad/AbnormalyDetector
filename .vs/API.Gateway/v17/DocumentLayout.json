@@ -3,28 +3,20 @@
   "WorkspaceRootPath": "D:\\Projects\\API.Gateway\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{6271CF72-31F0-440A-B2CF-9B98F70BF53C}|AbnomalyDetector\\AbnomalyDetector.csproj|d:\\projects\\api.gateway\\abnomalydetector\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{6271CF72-31F0-440A-B2CF-9B98F70BF53C}|AbnomalyDetector\\AbnomalyDetector.csproj|solutionrelative:abnomalydetector\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{EFAEA08F-3D27-4539-A958-A626A06D56DF}|API.Gateway\\API.Gateway.csproj|d:\\projects\\api.gateway\\api.gateway\\dockerfile||{8B382828-6202-11D1-8870-0000F87579D2}",
-      "RelativeMoniker": "D:0:0:{EFAEA08F-3D27-4539-A958-A626A06D56DF}|API.Gateway\\API.Gateway.csproj|solutionrelative:api.gateway\\dockerfile||{8B382828-6202-11D1-8870-0000F87579D2}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{6271CF72-31F0-440A-B2CF-9B98F70BF53C}|AbnomalyDetector\\AbnomalyDetector.csproj|d:\\projects\\api.gateway\\abnomalydetector\\dockerfile||{8B382828-6202-11D1-8870-0000F87579D2}",
-      "RelativeMoniker": "D:0:0:{6271CF72-31F0-440A-B2CF-9B98F70BF53C}|AbnomalyDetector\\AbnomalyDetector.csproj|solutionrelative:abnomalydetector\\dockerfile||{8B382828-6202-11D1-8870-0000F87579D2}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{6271CF72-31F0-440A-B2CF-9B98F70BF53C}|AbnomalyDetector\\AbnomalyDetector.csproj|d:\\projects\\api.gateway\\abnomalydetector\\abnomalydetector.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
-      "RelativeMoniker": "D:0:0:{6271CF72-31F0-440A-B2CF-9B98F70BF53C}|AbnomalyDetector\\AbnomalyDetector.csproj|solutionrelative:abnomalydetector\\abnomalydetector.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+      "AbsoluteMoniker": "D:0:0:{EFAEA08F-3D27-4539-A958-A626A06D56DF}|API.Gateway\\API.Gateway.csproj|d:\\projects\\api.gateway\\api.gateway\\rabbitmqclient.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{EFAEA08F-3D27-4539-A958-A626A06D56DF}|API.Gateway\\API.Gateway.csproj|solutionrelative:api.gateway\\rabbitmqclient.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{EFAEA08F-3D27-4539-A958-A626A06D56DF}|API.Gateway\\API.Gateway.csproj|d:\\projects\\api.gateway\\api.gateway\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{EFAEA08F-3D27-4539-A958-A626A06D56DF}|API.Gateway\\API.Gateway.csproj|solutionrelative:api.gateway\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{6271CF72-31F0-440A-B2CF-9B98F70BF53C}|AbnomalyDetector\\AbnomalyDetector.csproj|d:\\projects\\api.gateway\\abnomalydetector\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
-      "RelativeMoniker": "D:0:0:{6271CF72-31F0-440A-B2CF-9B98F70BF53C}|AbnomalyDetector\\AbnomalyDetector.csproj|solutionrelative:abnomalydetector\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+      "AbsoluteMoniker": "D:0:0:{EFAEA08F-3D27-4539-A958-A626A06D56DF}|API.Gateway\\API.Gateway.csproj|d:\\projects\\api.gateway\\api.gateway\\requestprocessormiddleware.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{EFAEA08F-3D27-4539-A958-A626A06D56DF}|API.Gateway\\API.Gateway.csproj|solutionrelative:api.gateway\\requestprocessormiddleware.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{EFAEA08F-3D27-4539-A958-A626A06D56DF}|API.Gateway\\API.Gateway.csproj|d:\\projects\\api.gateway\\api.gateway\\apigatewayoptions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{EFAEA08F-3D27-4539-A958-A626A06D56DF}|API.Gateway\\API.Gateway.csproj|solutionrelative:api.gateway\\apigatewayoptions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -33,8 +25,8 @@
       "VerticalTabListWidth": 256,
       "DocumentGroups": [
         {
-          "DockedHeight": 200,
-          "SelectedChildIndex": 7,
+          "DockedHeight": 355,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Bookmark",
@@ -50,76 +42,52 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "Dockerfile",
-              "DocumentMoniker": "D:\\Projects\\API.Gateway\\API.Gateway\\Dockerfile",
-              "RelativeDocumentMoniker": "API.Gateway\\Dockerfile",
-              "ToolTip": "D:\\Projects\\API.Gateway\\API.Gateway\\Dockerfile",
-              "RelativeToolTip": "API.Gateway\\Dockerfile",
-              "ViewState": "AgIAAAYAAAAAAAAAAAAAAA8AAAA1AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
-              "WhenOpened": "2025-11-15T17:27:31.641Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "Dockerfile",
-              "DocumentMoniker": "D:\\Projects\\API.Gateway\\AbnomalyDetector\\Dockerfile",
-              "RelativeDocumentMoniker": "AbnomalyDetector\\Dockerfile",
-              "ToolTip": "D:\\Projects\\API.Gateway\\AbnomalyDetector\\Dockerfile",
-              "RelativeToolTip": "AbnomalyDetector\\Dockerfile",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAALAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
-              "WhenOpened": "2025-11-15T17:27:18.954Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "AbnomalyDetector.csproj",
-              "DocumentMoniker": "D:\\Projects\\API.Gateway\\AbnomalyDetector\\AbnomalyDetector.csproj",
-              "RelativeDocumentMoniker": "AbnomalyDetector\\AbnomalyDetector.csproj",
-              "ToolTip": "D:\\Projects\\API.Gateway\\AbnomalyDetector\\AbnomalyDetector.csproj",
-              "RelativeToolTip": "AbnomalyDetector\\AbnomalyDetector.csproj",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAACAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
-              "WhenOpened": "2025-11-15T17:26:45.904Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "launchSettings.json",
-              "DocumentMoniker": "D:\\Projects\\API.Gateway\\AbnomalyDetector\\Properties\\launchSettings.json",
-              "RelativeDocumentMoniker": "AbnomalyDetector\\Properties\\launchSettings.json",
-              "ToolTip": "D:\\Projects\\API.Gateway\\AbnomalyDetector\\Properties\\launchSettings.json",
-              "RelativeToolTip": "AbnomalyDetector\\Properties\\launchSettings.json",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2025-11-15T17:12:28.415Z"
-            },
-            {
-              "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "Program.cs",
-              "DocumentMoniker": "D:\\Projects\\API.Gateway\\AbnomalyDetector\\Program.cs",
-              "RelativeDocumentMoniker": "AbnomalyDetector\\Program.cs",
-              "ToolTip": "D:\\Projects\\API.Gateway\\AbnomalyDetector\\Program.cs",
-              "RelativeToolTip": "AbnomalyDetector\\Program.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAhAAAAAAAAAA==",
+              "Title": "RabbitMqClient.cs",
+              "DocumentMoniker": "D:\\Projects\\API.Gateway\\API.Gateway\\RabbitMqClient.cs",
+              "RelativeDocumentMoniker": "API.Gateway\\RabbitMqClient.cs",
+              "ToolTip": "D:\\Projects\\API.Gateway\\API.Gateway\\RabbitMqClient.cs",
+              "RelativeToolTip": "API.Gateway\\RabbitMqClient.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAAAtAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-15T17:09:15.801Z",
+              "WhenOpened": "2025-12-19T17:02:24.552Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 3,
+              "Title": "APIGatewayOptions.cs",
+              "DocumentMoniker": "D:\\Projects\\API.Gateway\\API.Gateway\\APIGatewayOptions.cs",
+              "RelativeDocumentMoniker": "API.Gateway\\APIGatewayOptions.cs",
+              "ToolTip": "D:\\Projects\\API.Gateway\\API.Gateway\\APIGatewayOptions.cs",
+              "RelativeToolTip": "API.Gateway\\APIGatewayOptions.cs",
+              "ViewState": "AgIAAAMAAAAAAAAAAAA6wA8AAAAOAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-19T16:55:08.087Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
               "Title": "Program.cs",
               "DocumentMoniker": "D:\\Projects\\API.Gateway\\API.Gateway\\Program.cs",
               "RelativeDocumentMoniker": "API.Gateway\\Program.cs",
               "ToolTip": "D:\\Projects\\API.Gateway\\API.Gateway\\Program.cs",
               "RelativeToolTip": "API.Gateway\\Program.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABQAAAAkAAAAAAAAAA==",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAAABUAAAAmAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-15T17:01:53.101Z"
+              "WhenOpened": "2025-12-19T16:47:49.567Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "RequestProcessorMiddleware.cs",
+              "DocumentMoniker": "D:\\Projects\\API.Gateway\\API.Gateway\\RequestProcessorMiddleware.cs",
+              "RelativeDocumentMoniker": "API.Gateway\\RequestProcessorMiddleware.cs",
+              "ToolTip": "D:\\Projects\\API.Gateway\\API.Gateway\\RequestProcessorMiddleware.cs",
+              "RelativeToolTip": "API.Gateway\\RequestProcessorMiddleware.cs",
+              "ViewState": "AgIAADUAAAAAAAAAAIA3wEMAAAAIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-19T16:32:34.592Z"
             }
           ]
         },
@@ -146,7 +114,7 @@
           ]
         },
         {
-          "DockedHeight": 200,
+          "DockedHeight": 7,
           "SelectedChildIndex": -1,
           "Children": [
             {
@@ -174,7 +142,7 @@
           ]
         },
         {
-          "DockedHeight": 200,
+          "DockedHeight": 7,
           "SelectedChildIndex": -1,
           "Children": [
             {

@@ -14,7 +14,6 @@ D:\Projects\API.Gateway\API.Gateway\bin\Debug\net8.0\API.Gateway.deps.json
 D:\Projects\API.Gateway\API.Gateway\bin\Debug\net8.0\API.Gateway.runtimeconfig.json
 D:\Projects\API.Gateway\API.Gateway\bin\Debug\net8.0\API.Gateway.dll
 D:\Projects\API.Gateway\API.Gateway\bin\Debug\net8.0\API.Gateway.pdb
-D:\Projects\API.Gateway\API.Gateway\bin\Debug\net8.0\Consul.dll
 D:\Projects\API.Gateway\API.Gateway\bin\Debug\net8.0\IdentityModel.dll
 D:\Projects\API.Gateway\API.Gateway\bin\Debug\net8.0\IdentityModel.AspNetCore.dll
 D:\Projects\API.Gateway\API.Gateway\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.OpenIdConnect.dll
@@ -26,7 +25,6 @@ D:\Projects\API.Gateway\API.Gateway\bin\Debug\net8.0\Microsoft.IdentityModel.Pro
 D:\Projects\API.Gateway\API.Gateway\bin\Debug\net8.0\Microsoft.IdentityModel.Tokens.dll
 D:\Projects\API.Gateway\API.Gateway\bin\Debug\net8.0\Microsoft.OpenApi.dll
 D:\Projects\API.Gateway\API.Gateway\bin\Debug\net8.0\Microsoft.OpenApi.Readers.dll
-D:\Projects\API.Gateway\API.Gateway\bin\Debug\net8.0\Newtonsoft.Json.dll
 D:\Projects\API.Gateway\API.Gateway\bin\Debug\net8.0\SharpYaml.dll
 D:\Projects\API.Gateway\API.Gateway\bin\Debug\net8.0\Swashbuckle.AspNetCore.Swagger.dll
 D:\Projects\API.Gateway\API.Gateway\bin\Debug\net8.0\Swashbuckle.AspNetCore.SwaggerGen.dll
@@ -50,3 +48,5 @@ D:\Projects\API.Gateway\API.Gateway\obj\Debug\net8.0\refint\API.Gateway.dll
 D:\Projects\API.Gateway\API.Gateway\obj\Debug\net8.0\API.Gateway.pdb
 D:\Projects\API.Gateway\API.Gateway\obj\Debug\net8.0\API.Gateway.genruntimeconfig.cache
 D:\Projects\API.Gateway\API.Gateway\obj\Debug\net8.0\ref\API.Gateway.dll
+D:\Projects\API.Gateway\API.Gateway\bin\Debug\net8.0\RabbitMQ.Client.dll
+D:\Projects\API.Gateway\API.Gateway\obj\Debug\net8.0\API.Gateway.sourcelink.json
