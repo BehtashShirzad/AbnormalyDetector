@@ -156,8 +156,8 @@
       JOB_EVERY_SEC: "10"
 
       # Thresholds
-      HIGH_TH: "0.90"
-      MED_TH: "0.80"
+      HIGH_TH: "0.50"
+      MED_TH: "0.30"
       COOLDOWN_SEC: "60"
       HIGH_TTL_SEC: "1800"
       MED_TTL_SEC: "600"

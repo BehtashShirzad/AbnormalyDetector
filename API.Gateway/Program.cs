@@ -26,7 +26,7 @@ builder.Services.AddSingleton<IConnection>(sp =>
         Password = pass,
         Port = port,
     };
-
+    Thread.Sleep(10000);
     return factory.CreateConnectionAsync().GetAwaiter().GetResult();
 });
 
