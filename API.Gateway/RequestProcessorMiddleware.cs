@@ -13,7 +13,7 @@ public static class SecurityConstants
 
 public sealed class RequestProcessorMiddleware
 {
-    private const string CacheKeyPrefix = "REQ_RATE_";
+ 
     private const string DefaultServiceName = "API.Gateway";
 
     private readonly RequestDelegate _next;
@@ -33,7 +33,7 @@ public sealed class RequestProcessorMiddleware
         _cache = memoryCache;
     }
 
-    // داخل RequestProcessorMiddleware
+ 
 
     private static readonly TimeSpan BurstWindow = TimeSpan.FromSeconds(1);
     private const int MaxRequestsPerBurstWindow = 8;
@@ -41,7 +41,7 @@ public sealed class RequestProcessorMiddleware
     private static readonly TimeSpan ScanWindow = TimeSpan.FromSeconds(60);
     private const int MaxUniquePathsPerScanWindow = 25;
 
-    // مسیرهای رایج اسکن
+ 
     private static readonly string[] SensitivePaths =
     {
     "/wp-admin", "/wp-login.php", "/.env", "/phpmyadmin", "/admin", "/login",
@@ -58,7 +58,7 @@ public sealed class RequestProcessorMiddleware
         // 2) Scan
         await CheckSuspiciousScanAsync(context, ip);
 
-        // 3) Bot (هدر/رفتار)
+        // 3) Bot 
         await CheckBotDetectedAsync(context, ip);
 
         // 4) SQLi (Block)
@@ -120,7 +120,7 @@ public sealed class RequestProcessorMiddleware
     {
         var path = context.Request.Path.ToString();
 
-        // Sensitive path hit => فوری scan event
+        // Sensitive path hit
         if (IsSensitivePath(path))
         {
             await SafeRaiseEventAsync(CreateEvent(
@@ -134,7 +134,7 @@ public sealed class RequestProcessorMiddleware
             return;
         }
 
-        // Unique paths در 60 ثانیه
+        // Unique paths in 60s
         var unique = TrackUniquePath(ip, path);
 
         if (unique >= MaxUniquePathsPerScanWindow)
@@ -164,14 +164,14 @@ public sealed class RequestProcessorMiddleware
     {
         var key = $"SCAN_{ip}";
 
-        // برای پروژه دانشجویی: یک HashSet ساده داخل cache
+    
         var set = _cache.GetOrCreate(key, entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = ScanWindow;
             return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         });
 
-        lock (set) // حداقل thread-safety
+        lock (set) 
         {
             set.Add(path);
             _cache.Set(key, set, ScanWindow);
@@ -195,7 +195,6 @@ public sealed class RequestProcessorMiddleware
         if (string.IsNullOrWhiteSpace(accept)) score += 1;
         if (string.IsNullOrWhiteSpace(acceptLang)) score += 1;
 
-        // رفتار: اگر همین الان burst بالا داشته باشه، bot محتمل‌تره
         var burstCount = _cache.TryGetValue($"BURST_{ip}", out int b) ? b : 0;
         if (burstCount > MaxRequestsPerBurstWindow) score += 2;
 
@@ -268,10 +267,10 @@ public sealed class RequestProcessorMiddleware
     {
         if (string.IsNullOrWhiteSpace(input)) return false;
 
-        // decode سبک (یک مرحله کافی)
+         
         var decoded = Uri.UnescapeDataString(input).ToLowerInvariant();
 
-        // الگوهای رایج (خیلی افراطی نکردم)
+      
         return decoded.Contains("<script")
             || decoded.Contains("javascript:")
             || decoded.Contains("onerror=")
@@ -294,7 +293,7 @@ public sealed class RequestProcessorMiddleware
     {
         var request = context.Request;
 
-        // swagger را رد کن
+        
         if (request.Path.StartsWithSegments("/swagger", StringComparison.OrdinalIgnoreCase))
             return false;
 
@@ -334,7 +333,7 @@ public sealed class RequestProcessorMiddleware
 
         await SafeRaiseEventAsync(ev);
 
-        // بلاک در گیت‌وی
+        
         context.Response.StatusCode = StatusCodes.Status403Forbidden;
         context.Response.ContentLength = 0;
         return true;
@@ -385,7 +384,7 @@ public sealed class RequestProcessorMiddleware
 
     private static string? BuildSnapshot(HttpContext context, object extra)
     {
-        // snapshot سبک و کم‌حجم؛ برای ML هم بدرد می‌خورد.
+        
         var req = context.Request;
 
         var payload = new
