@@ -44,6 +44,12 @@
       RABBITMQ_DEFAULT_PASS: guest
     networks:
       - mynet
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
 
   anomaly-worker:
     container_name: anomaly-worker
@@ -52,8 +58,10 @@
       context: ./anomaly-worker
       dockerfile: Dockerfile
     depends_on:
-      - rabbitmq
-      - postgres
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_started
     environment:
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
@@ -67,6 +75,7 @@
       POSTGRES_DB: security
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
+    command: ["sh", "-c", "sleep 25 && python /app/Worker.py"]
     networks:
       - mynet
 
@@ -89,12 +98,87 @@
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     depends_on:
-      - rabbitmq
-      - postgres
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_started
+    command: ["sh", "-c", "sleep 40 && dotnet API.Gateway.dll"]
     ports:
       - "8080:8080"
     networks:
       - mynet
+      
+      
+  ip-risk-trainer:
+    container_name: ip-risk-trainer
+    image: anomaly-worker-image     
+    build:
+      context: ./anomaly-worker
+      dockerfile: Dockerfile
+    depends_on:
+      - postgres
+    environment:
+      DB_URL: postgresql+psycopg2://postgres:postgres@postgres:5432/security
+      MODEL_OUT: /models/ip_risk_model.joblib
+      DAYS: "14"
+      WINDOW_SEC: "60"
+      MODE: "supervised"
+      MODEL: "rf"
+      LABEL_SEV: "3"
+    volumes:
+      - ./models:/models
+    command: ["/app/train_loop.sh"]
+    networks:
+      - mynet
+    restart: always
+
+  ip-risk-job:
+    container_name: ip-risk-job
+    image: anomaly-worker-image
+    build:
+      context: ./anomaly-worker
+      dockerfile: Dockerfile
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_started
+      ip-risk-trainer:
+        condition: service_started
+    environment:
+      # DB
+      DB_URL: postgresql+psycopg2://postgres:postgres@postgres:5432/security
+
+      # Model file (shared volume)
+      MODEL_PATH: /models/ip_risk_model.joblib
+
+      # Job timing
+      INFER_WINDOW_SEC: "60"
+      JOB_EVERY_SEC: "10"
+
+      # Thresholds
+      HIGH_TH: "0.90"
+      MED_TH: "0.80"
+      COOLDOWN_SEC: "60"
+      HIGH_TTL_SEC: "1800"
+      MED_TTL_SEC: "600"
+
+      # RabbitMQ (publish integration event)
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USER: guest
+      RABBITMQ_PASS: guest
+      INTEGRATION_EXCHANGE: security.integration
+      INTEGRATION_EXCHANGE_TYPE: fanout
+      INTEGRATION_ROUTING_KEY: ""
+      SERVICE_NAME: ip-risk-job
+    volumes:
+      - ./models:/models
+    command: ["sh", "-c", "sleep 25 && python /app/risk_job.py"]
+    networks:
+      - mynet
+    restart: always
+
 
 networks:
   mynet:

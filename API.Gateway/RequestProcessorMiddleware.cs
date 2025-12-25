@@ -1,17 +1,21 @@
-﻿ 
+﻿using System.Text.Json;
+using API.Gateway.Events;
 using API.Gateway.Services;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace API.Gateway;
+
 public static class SecurityConstants
 {
     public const int MaxRequestsPerWindow = 20;
     public static readonly TimeSpan Window = TimeSpan.FromSeconds(10);
 }
 
-
-public class RequestProcessorMiddleware
+public sealed class RequestProcessorMiddleware
 {
+    private const string CacheKeyPrefix = "REQ_RATE_";
+    private const string DefaultServiceName = "API.Gateway";
+
     private readonly RequestDelegate _next;
     private readonly RabbitMqClient _notifierClient;
     private readonly ILogger<RequestProcessorMiddleware> _logger;
@@ -29,65 +33,273 @@ public class RequestProcessorMiddleware
         _cache = memoryCache;
     }
 
+    // داخل RequestProcessorMiddleware
+
+    private static readonly TimeSpan BurstWindow = TimeSpan.FromSeconds(1);
+    private const int MaxRequestsPerBurstWindow = 8;
+
+    private static readonly TimeSpan ScanWindow = TimeSpan.FromSeconds(60);
+    private const int MaxUniquePathsPerScanWindow = 25;
+
+    // مسیرهای رایج اسکن
+    private static readonly string[] SensitivePaths =
+    {
+    "/wp-admin", "/wp-login.php", "/.env", "/phpmyadmin", "/admin", "/login",
+    "/actuator", "/metrics", "/swagger", "/graphql", "/robots.txt"
+};
+
     public async Task InvokeAsync(HttpContext context)
     {
         var ip = GetClientIp(context);
-        var request = context.Request;
-        var fullUrl =
-$"{request.Scheme}://{request.Host}{request.Path}{request.QueryString}";
-        await CheckRateLimitAsync(ip, fullUrl);
 
+        // 1) Rate & Burst
+        await CheckRateAndBurstAsync(context, ip);
+
+        // 2) Scan
+        await CheckSuspiciousScanAsync(context, ip);
+
+        // 3) Bot (هدر/رفتار)
+        await CheckBotDetectedAsync(context, ip);
+
+        // 4) SQLi (Block)
         if (await DetectAndHandleSqlInjectionAsync(context, ip))
-            return;  
+            return;
+
+        // 5) XSS (Block)
+        if (await DetectAndHandleXssAsync(context, ip))
+            return;
 
         await _next(context);
     }
 
-    // ============================
-    // Rate limiting
-    // ============================
-    private async Task CheckRateLimitAsync(string ip,string serviceName)
-    {
-        var cacheKey = $"REQ_RATE_{ip}";
 
-        var counter = _cache.GetOrCreate(cacheKey, entry =>
+    private async Task CheckRateAndBurstAsync(HttpContext context, string ip)
+    {
+        // 10s window => RateLimiting
+        var rateCount = IncrementCounter(ip, "RATE", SecurityConstants.Window);
+
+        if (rateCount > SecurityConstants.MaxRequestsPerWindow)
         {
-            entry.AbsoluteExpirationRelativeToNow = SecurityConstants.Window;
-            return 0;
+            await SafeRaiseEventAsync(CreateEvent(
+                context, ip,
+                SecurityEventType.RateLimiting,
+                Severity.Warning,
+                $"Rate limit exceeded: {rateCount} in {SecurityConstants.Window.TotalSeconds:0}s",
+                statusCode: null,
+                requestSnapshot: BuildSnapshot(context, new { rateCount, windowSec = SecurityConstants.Window.TotalSeconds })
+            ));
+        }
+
+        // 1s window => Burst
+        var burstCount = IncrementCounter(ip, "BURST", BurstWindow);
+
+        if (burstCount > MaxRequestsPerBurstWindow)
+        {
+            await SafeRaiseEventAsync(CreateEvent(
+                context, ip,
+                SecurityEventType.TooManyRequestsBurst,
+                Severity.Warning,
+                $"Burst detected: {burstCount} in {BurstWindow.TotalSeconds:0}s",
+                statusCode: null,
+                requestSnapshot: BuildSnapshot(context, new { burstCount, windowSec = BurstWindow.TotalSeconds })
+            ));
+        }
+    }
+
+    private int IncrementCounter(string ip, string prefix, TimeSpan window)
+    {
+        var key = $"{prefix}_{ip}";
+        var current = _cache.TryGetValue(key, out int v) ? v : 0;
+        var next = current + 1;
+        _cache.Set(key, next, window);
+        return next;
+    }
+
+
+    private async Task CheckSuspiciousScanAsync(HttpContext context, string ip)
+    {
+        var path = context.Request.Path.ToString();
+
+        // Sensitive path hit => فوری scan event
+        if (IsSensitivePath(path))
+        {
+            await SafeRaiseEventAsync(CreateEvent(
+                context, ip,
+                SecurityEventType.SuspiciousScan,
+                Severity.Warning,
+                $"Sensitive path probed: {path}",
+                statusCode: null,
+                requestSnapshot: BuildSnapshot(context, new { path })
+            ));
+            return;
+        }
+
+        // Unique paths در 60 ثانیه
+        var unique = TrackUniquePath(ip, path);
+
+        if (unique >= MaxUniquePathsPerScanWindow)
+        {
+            await SafeRaiseEventAsync(CreateEvent(
+                context, ip,
+                SecurityEventType.SuspiciousScan,
+                Severity.Warning,
+                $"High unique path rate: {unique} unique paths in {ScanWindow.TotalSeconds:0}s",
+                statusCode: null,
+                requestSnapshot: BuildSnapshot(context, new { unique, windowSec = ScanWindow.TotalSeconds })
+            ));
+        }
+    }
+
+    private bool IsSensitivePath(string path)
+    {
+        foreach (var p in SensitivePaths)
+        {
+            if (path.StartsWith(p, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        return false;
+    }
+
+    private int TrackUniquePath(string ip, string path)
+    {
+        var key = $"SCAN_{ip}";
+
+        // برای پروژه دانشجویی: یک HashSet ساده داخل cache
+        var set = _cache.GetOrCreate(key, entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = ScanWindow;
+            return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         });
 
-        counter++;
-        _cache.Set(cacheKey, counter, SecurityConstants.Window);
-
-        if (counter <= SecurityConstants.MaxRequestsPerWindow)
-            return;
-
-        _logger.LogWarning(
-            "⚠️ High request rate detected | IP: {IP} | Count: {Count}",
-            ip,
-            counter);
-
-        await _notifierClient.RaiseEvent(new(serviceName,
-            ip,
-            $"Rate limit exceeded: {counter} requests in {SecurityConstants.Window.TotalSeconds}s",
-            Events.Severity.Warning,
-            DateTime.UtcNow));
+        lock (set) // حداقل thread-safety
+        {
+            set.Add(path);
+            _cache.Set(key, set, ScanWindow);
+            return set.Count;
+        }
     }
+
+
+    private async Task CheckBotDetectedAsync(HttpContext context, string ip)
+    {
+        var req = context.Request;
+
+        var ua = GetUserAgent(req);
+        var accept = req.Headers.Accept.ToString();
+        var acceptLang = req.Headers.AcceptLanguage.ToString();
+
+        int score = 0;
+
+        if (string.IsNullOrWhiteSpace(ua)) score += 2;
+        if (IsSuspiciousUserAgent(ua)) score += 3;
+        if (string.IsNullOrWhiteSpace(accept)) score += 1;
+        if (string.IsNullOrWhiteSpace(acceptLang)) score += 1;
+
+        // رفتار: اگر همین الان burst بالا داشته باشه، bot محتمل‌تره
+        var burstCount = _cache.TryGetValue($"BURST_{ip}", out int b) ? b : 0;
+        if (burstCount > MaxRequestsPerBurstWindow) score += 2;
+
+        // scan behavior
+        var scanSet = _cache.TryGetValue($"SCAN_{ip}", out HashSet<string>? s) ? s : null;
+        var unique = scanSet?.Count ?? 0;
+        if (unique >= MaxUniquePathsPerScanWindow) score += 2;
+
+        if (score < 4) return;
+
+        await SafeRaiseEventAsync(CreateEvent(
+            context, ip,
+            SecurityEventType.BotDetected,
+            Severity.Warning,
+            $"Bot-like behavior detected (score={score})",
+            statusCode: null,
+            requestSnapshot: BuildSnapshot(context, new { score, ua, accept, acceptLang, burstCount, uniquePaths = unique })
+        ));
+    }
+
+    private static bool IsSuspiciousUserAgent(string ua)
+    {
+        ua = ua?.ToLowerInvariant() ?? "";
+        return ua.Contains("curl")
+            || ua.Contains("wget")
+            || ua.Contains("python-requests")
+            || ua.Contains("go-http-client")
+            || ua.Contains("httpclient")
+            || ua.Contains("scrapy");
+    }
+
+    private async Task<bool> DetectAndHandleXssAsync(HttpContext context, string ip)
+    {
+        var req = context.Request;
+
+        if (req.Path.StartsWithSegments("/swagger", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        var routeValues = GetRouteValues(context);
+        var queryValues = GetQueryValues(req);
+
+        var combined = string.Join(" ", new[]
+        {
+        req.Path.ToString(),
+        req.QueryString.ToString(),
+        string.Join(" ", routeValues),
+        string.Join(" ", queryValues)
+    });
+
+        if (!HasXssPayload(combined))
+            return false;
+
+        _logger.LogWarning("⚠️ Possible XSS detected | IP: {IP} | Path: {Path}", ip, req.Path.ToString());
+
+        await SafeRaiseEventAsync(CreateEvent(
+            context, ip,
+            SecurityEventType.XSS,
+            Severity.Attack,
+            "Possible XSS payload detected",
+            statusCode: StatusCodes.Status403Forbidden,
+            requestSnapshot: BuildSnapshot(context, new { sample = Truncate(combined, 200) })
+        ));
+
+        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+        context.Response.ContentLength = 0;
+        return true;
+    }
+
+    private static bool HasXssPayload(string input)
+    {
+        if (string.IsNullOrWhiteSpace(input)) return false;
+
+        // decode سبک (یک مرحله کافی)
+        var decoded = Uri.UnescapeDataString(input).ToLowerInvariant();
+
+        // الگوهای رایج (خیلی افراطی نکردم)
+        return decoded.Contains("<script")
+            || decoded.Contains("javascript:")
+            || decoded.Contains("onerror=")
+            || decoded.Contains("onload=")
+            || decoded.Contains("<svg")
+            || decoded.Contains("<img")
+            || decoded.Contains("data:text/html");
+    }
+
+    private static string Truncate(string s, int max) =>
+        s.Length <= max ? s : s.Substring(0, max);
+
+ 
+ 
 
     // ============================
     // SQL Injection detection
     // ============================
-    private async Task<bool> DetectAndHandleSqlInjectionAsync(HttpContext context,string ip)
+    private async Task<bool> DetectAndHandleSqlInjectionAsync(HttpContext context, string ip)
     {
         var request = context.Request;
 
-        var routeValues = GetRouteValues(context);
-        var fullUrl =
-    $"{request.Scheme}://{request.Host}{request.Path}{request.QueryString}";
-        if (request.Path.Value.Contains("swagger"))
+        // swagger را رد کن
+        if (request.Path.StartsWithSegments("/swagger", StringComparison.OrdinalIgnoreCase))
             return false;
-        var queryValues = GetQueryValues(request);
 
+        var routeValues = GetRouteValues(context);
+        var queryValues = GetQueryValues(request);
 
         var result = SqlInjectionDetector.HasSqlInjection(
             request.Path,
@@ -99,22 +311,94 @@ $"{request.Scheme}://{request.Host}{request.Path}{request.QueryString}";
             return false;
 
         _logger.LogWarning(
-            "⚠️ Possible SQL Injection detected | IP: {IP} | Path: {Path} | Route: {Route} | Query: {Query}",
-            GetClientIp(context),
+            "⚠️ Possible SQL Injection detected | IP: {IP} | Path: {Path} | Query: {Query}",
+            ip,
             request.Path.ToString(),
-            context.Request.RouteValues,
-            request.QueryString.ToString());
+            request.QueryString.ToString()
+        );
 
-        await _notifierClient.RaiseEvent(new(
-           fullUrl, ip,
-            result.AnormalValue,
-            Events.Severity.Attack,
-            DateTime.UtcNow));
+        var ev = CreateEvent(
+            context: context,
+            ip: ip,
+            eventType: SecurityEventType.SQLInjection,
+            severity: Severity.Attack,
+            description: result.AnormalValue,
+            statusCode: StatusCodes.Status403Forbidden,
+            requestSnapshot: BuildSnapshot(context, new
+            {
+                abnormalValue = result.AnormalValue,
+                routeValues,
+                query = request.QueryString.ToString()
+            })
+        );
 
+        await SafeRaiseEventAsync(ev);
+
+        // بلاک در گیت‌وی
         context.Response.StatusCode = StatusCodes.Status403Forbidden;
         context.Response.ContentLength = 0;
+        return true;
+    }
 
-        return true; // ⛔ request متوقف شد
+    // ============================
+    // Event building / publishing
+    // ============================
+    private AnormalEvent CreateEvent(
+        HttpContext context,
+        string ip,
+        SecurityEventType eventType,
+        Severity severity,
+        string description,
+        int? statusCode,
+        string? requestSnapshot)
+    {
+        var req = context.Request;
+
+        return new AnormalEvent(
+            Id: null,
+            ServiceName: DefaultServiceName,
+            Ip: ip,
+            EventType: eventType,
+            Severity: severity,
+            Description: description,
+            OccurredAt: DateTime.UtcNow,
+            RequestId: GetRequestId(context),
+            Method: req.Method,
+            Path: req.Path.ToString(),
+            StatusCode: statusCode,
+            UserAgent: GetUserAgent(req),
+            Request: requestSnapshot
+        );
+    }
+
+    private async Task SafeRaiseEventAsync(AnormalEvent ev)
+    {
+        try
+        {
+            await _notifierClient.RaiseEvent(ev);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to publish security event to RabbitMQ. IP: {IP} Type: {Type}", ev.Ip, ev.EventType);
+        }
+    }
+
+    private static string? BuildSnapshot(HttpContext context, object extra)
+    {
+        // snapshot سبک و کم‌حجم؛ برای ML هم بدرد می‌خورد.
+        var req = context.Request;
+
+        var payload = new
+        {
+            url = $"{req.Scheme}://{req.Host}{req.Path}{req.QueryString}",
+            method = req.Method,
+            path = req.Path.ToString(),
+            query = req.QueryString.ToString(),
+            ua = GetUserAgent(req),
+            extra
+        };
+
+        return JsonSerializer.Serialize(payload);
     }
 
     // ============================
@@ -123,6 +407,12 @@ $"{request.Scheme}://{request.Host}{request.Path}{request.QueryString}";
     private static string GetClientIp(HttpContext context) =>
         context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
+    private static string? GetRequestId(HttpContext context) =>
+        string.IsNullOrWhiteSpace(context.TraceIdentifier) ? null : context.TraceIdentifier;
+
+    private static string GetUserAgent(HttpRequest request) =>
+        request.Headers.UserAgent.ToString();
+
     private static string[] GetRouteValues(HttpContext context) =>
         context.Request.RouteValues
             .Select(rv => rv.Value?.ToString())
@@ -130,8 +420,5 @@ $"{request.Scheme}://{request.Host}{request.Path}{request.QueryString}";
             .ToArray();
 
     private static string[] GetQueryValues(HttpRequest request) =>
-        request.Query
-            .Select(q => q.Value.ToString())
-            .ToArray();
- 
+        request.Query.Select(q => q.Value.ToString()).ToArray();
 }

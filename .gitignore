@@ -86,3 +86,6 @@ desktop.ini
 # Docker (optional)
 ############################
 *.pid
+
+models/
+db/

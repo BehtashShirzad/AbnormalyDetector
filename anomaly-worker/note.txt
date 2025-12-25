@@ -1,13 +1,43 @@
 docker pull dpage/pgadmin4:latest
 pip install pika psycopg2-binary
+pip install sqlalchemy psycopg2-binary pandas scikit-learn joblib
 docker pull postgres:14.20-alpine3.23
 
 CREATE TABLE anormal_events (
-    id SERIAL PRIMARY KEY,
-    service_name TEXT NOT NULL,
-    description TEXT NOT NULL,
-    severity SMALLINT NOT NULL,
-    occurred_at TIMESTAMP NOT NULL,
-    request JSONB NULL,
-    created_at TIMESTAMP DEFAULT now()
+    id           BIGSERIAL PRIMARY KEY,
+
+    service_name TEXT      NOT NULL,
+
+    -- اگر IPv4/IPv6 داری بهتره inet باشه؛ اگر نخواستی بگو text می‌کنم
+    ip           INET      NOT NULL,
+
+    -- enum in app -> int in DB
+    event_type   INTEGER   NOT NULL,
+
+    severity     SMALLINT  NOT NULL,
+
+    description  TEXT      NOT NULL,
+
+    occurred_at  TIMESTAMP NOT NULL,
+
+    -- فقط یکی از این‌ها (برای همون HTTP context که گفتی)
+    request_id   TEXT      NULL,
+
+    -- برای فیچر و تحلیل
+    method       TEXT      NULL,
+    path         TEXT      NULL,
+    status_code  INTEGER   NULL,
+    user_agent   TEXT      NULL,
+
+    -- اطلاعات خام (اختیاری)
+    request      JSONB     NULL
 );
+
+CREATE INDEX idx_anormal_events_time
+    ON anormal_events (occurred_at);
+
+CREATE INDEX idx_anormal_events_ip_time
+    ON anormal_events (ip, occurred_at);
+
+CREATE INDEX idx_anormal_events_type_time
+    ON anormal_events (event_type, occurred_at);
