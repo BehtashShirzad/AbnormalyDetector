@@ -27,7 +27,7 @@ DB_CONFIG = {
 }
 
 # ======================
-# ENUM MAPPINGS (اگر به شکل string بیاد)
+# ENUM MAPPINGS  
 # ======================
 SEVERITY_MAP = {
     "Info": 0,
@@ -70,13 +70,13 @@ def parse_enum(value, mapping: dict, field_name: str) -> int:
 
     if isinstance(value, str):
         v = value.strip()
-        # اگر عدد بود
+        
         if v.isdigit() or (v.startswith("-") and v[1:].isdigit()):
             return int(v)
-        # اگر اسم enum بود
+        
         if v in mapping:
             return mapping[v]
-        # گاهی lower میاد
+        
         for k, num in mapping.items():
             if k.lower() == v.lower():
                 return num
@@ -121,11 +121,11 @@ def parse_request_jsonb(request_value):
     if request_value is None:
         return None
 
-    # اگر dict/list بود مستقیم
+    
     if isinstance(request_value, (dict, list)):
         return request_value
 
-    # اگر string بود سعی کن json parse کنی
+    
     if isinstance(request_value, str):
         s = request_value.strip()
         if not s:
@@ -133,10 +133,10 @@ def parse_request_jsonb(request_value):
         try:
             return json.loads(s)
         except Exception:
-            # JSON نیست → داخل jsonb با کلید raw ذخیره کن
+            
             return {"raw": s}
 
-    # هر چیز دیگه
+    
     return {"raw": str(request_value)}
 
 
@@ -178,7 +178,7 @@ def normalize_payload(payload: dict) -> dict:
 
     # status_code should be int or None
     if status_code is not None and not isinstance(status_code, int):
-        # اگر string عددی بود
+        
         if isinstance(status_code, str) and status_code.strip().isdigit():
             status_code = int(status_code.strip())
         else:
@@ -250,11 +250,11 @@ def on_message(channel, method, properties, body):
         save_event(event_norm)
 
         channel.basic_ack(delivery_tag=method.delivery_tag)
-        print(f"✔ Event saved | Type={event_norm['event_type']} Severity={event_norm['severity']} IP={event_norm['ip']}")
+        print(f"(++++) Event saved | Type={event_norm['event_type']} Severity={event_norm['severity']} IP={event_norm['ip']}")
 
     except Exception as e:
-        print("❌ Failed to process event:", e)
-        # requeue=False چون اگر payload خراب بود، گیر نکنه
+        print("---- Failed to process event:", e)
+        
         channel.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
 
 
@@ -281,7 +281,7 @@ def start_worker():
 
     channel.basic_consume(queue=QUEUE_NAME, on_message_callback=on_message)
 
-    print("🚀 AnormalEvent worker started...")
+    print("++++ AnormalEvent worker started...")
     channel.start_consuming()
 
 

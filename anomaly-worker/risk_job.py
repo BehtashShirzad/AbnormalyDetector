@@ -13,7 +13,7 @@ import pika
 # ======================
 # ENV CONFIG
 # ======================
-DB_URL = os.getenv("DB_URL", "")  # مثال: postgresql+psycopg2://postgres:postgres@postgres:5432/security
+DB_URL = os.getenv("DB_URL", "")   
 MODEL_PATH = os.getenv("MODEL_PATH", "/models/ip_risk_model.joblib")
 
 # inference window (seconds)
@@ -204,7 +204,7 @@ def publish_integration_event(ch, payload: dict):
   
     ch.basic_publish(
     exchange=INTEGRATION_EXCHANGE,
-    routing_key=INTEGRATION_ROUTING_KEY,  # برای fanout خالی
+    routing_key=INTEGRATION_ROUTING_KEY, 
     body=body,
        properties=pika.BasicProperties(
             content_type="application/json",

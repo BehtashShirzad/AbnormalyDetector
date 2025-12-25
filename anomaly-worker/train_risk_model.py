@@ -19,16 +19,10 @@ from sklearn.ensemble import RandomForestClassifier, IsolationForest
 # -----------------------------
 # Config (edit these)
 # -----------------------------
-# این mapping رو مطابق enum خودت تنظیم کن
-# مثال:
-# 1 = SQL_INJECTION
-# 2 = RATE_LIMIT
-# 3 = PATH_TRAVERSAL
-# 4 = BAD_TOKEN
 ATTACK_EVENT_TYPES = {1, 2}              # SQLi, XSS
 SUSPICIOUS_EVENT_TYPES = {10, 11, 12, 13, 20, 21}
 
-DEFAULT_LABEL_SEVERITY_THRESHOLD = 3  # severity >= 3 => حمله/ریسک بالا (قابل تغییر)
+DEFAULT_LABEL_SEVERITY_THRESHOLD = 3  # severity >= 3 => High Risk
 
 
 SQL_FETCH = """
@@ -89,7 +83,7 @@ def load_events(engine, t0: datetime, t1: datetime) -> pd.DataFrame:
         return df
 
     df["occurred_at"] = pd.to_datetime(df["occurred_at"])
-    # اگر ip رو inet نگه داشتی، اینجا به string تبدیل شده.
+    
     df["event_type"] = df["event_type"].astype(int, errors="ignore")
     df["severity"] = df["severity"].astype(int, errors="ignore")
     return df
@@ -100,7 +94,7 @@ def bin_and_aggregate(df: pd.DataFrame, window_sec: int) -> pd.DataFrame:
     Aggregate per (ip, time_bin) to build ML-friendly features.
     """
     df = df.copy()
-    # تایم‌بین
+   
     df["time_bin"] = df["occurred_at"].dt.floor(f"{window_sec}s")
 
     # flags per row
@@ -109,7 +103,7 @@ def bin_and_aggregate(df: pd.DataFrame, window_sec: int) -> pd.DataFrame:
     df["is_403"] = (df["status_code"] == 403).fillna(False).astype(int)
     df["is_4xx"] = df["status_code"].between(400, 499).fillna(False).astype(int)
 
-    # برای robust بودن در nullها
+     
     df["path"] = df["path"].fillna("")
     df["method"] = df["method"].fillna("")
     df["user_agent"] = df["user_agent"].fillna("")
@@ -127,7 +121,7 @@ def bin_and_aggregate(df: pd.DataFrame, window_sec: int) -> pd.DataFrame:
         uniq_ua=("user_agent", "nunique"),
     )
 
-    # فیچرهای مشتق‌شده
+    
     agg["events_rate"] = agg["events_count"] / float(window_sec)
     agg["ratio_attack_type"] = agg["attack_type_count"] / agg["events_count"].clip(lower=1)
     agg["ratio_suspicious_type"] = agg["suspicious_type_count"] / agg["events_count"].clip(lower=1)
@@ -140,9 +134,9 @@ def bin_and_aggregate(df: pd.DataFrame, window_sec: int) -> pd.DataFrame:
 def make_labels(agg: pd.DataFrame, label_sev_threshold: int) -> pd.Series:
     """
     Supervised label heuristic:
-    - اگر event_type از ATTACK_EVENT_TYPES باشد => 1
-    - یا max_severity >= threshold => 1
-    این را بعداً می‌توانی دقیق‌تر کنی.
+    - if event_type  ATTACK_EVENT_TYPES   => 1
+    - or max_severity >= threshold => 1
+  
     """
     y = ((agg["attack_type_count"] > 0) | (agg["max_severity"] >= label_sev_threshold)).astype(int)
     return y
@@ -150,7 +144,7 @@ def make_labels(agg: pd.DataFrame, label_sev_threshold: int) -> pd.Series:
 
 def build_model(model_name: str, mode: str):
     if mode == "unsupervised":
-        # IsolationForest: anomaly detection (بدون لیبل)
+        # IsolationForest: anomaly detection  
         return Pipeline([
             ("scaler", StandardScaler()),
             ("iso", IsolationForest(
@@ -171,7 +165,7 @@ def build_model(model_name: str, mode: str):
             ))
         ])
 
-    # rf (پیشنهاد خوب برای شروع)
+    
     return RandomForestClassifier(
         n_estimators=600,
         random_state=42,
@@ -194,7 +188,6 @@ def train_supervised(agg: pd.DataFrame, y: pd.Series, model_name: str):
 
     X = agg[feature_cols].copy()
 
-    # اگر همه لیبل‌ها یکسان شدند، supervised معنی ندارد
     if y.nunique() < 2:
         raise RuntimeError("Only one label class found. Use unsupervised or adjust label rules.")
 
@@ -204,16 +197,15 @@ def train_supervised(agg: pd.DataFrame, y: pd.Series, model_name: str):
 
     model = build_model(model_name=model_name, mode="supervised")
 
-    # ✅ اگر دیتا کم است: بدون split روی کل دیتا train کن (برای ارائه عالیه)
-    # شرط‌ها: تعداد نمونه کم یا یک کلاس خیلی کم نمونه دارد
+
     if n < 20 or min_class_count < 2:
         print(f"[train] small dataset (n={n}, min_class_count={min_class_count}). Training on ALL data (no validation).")
         model.fit(X, y)
         return model, feature_cols, {"val_auc": None, "note": "trained_on_all_no_validation_small_data"}
 
-    # ✅ در غیر اینصورت split استاندارد
+    
     test_size = 0.2
-    # مطمئن شو test حداقل به تعداد کلاس‌ها نمونه داشته باشد
+    
     if int(n * test_size) < n_classes:
         test_size = max(test_size, n_classes / n)
 
@@ -255,8 +247,8 @@ def main():
 
     engine = create_engine(cfg.db_url, pool_pre_ping=True)
 
-    # بازه آموزش
-    t1 = datetime.now(timezone.utc)  # چون occurred_at TIMESTAMP بدون tz هست
+    
+    t1 = datetime.now(timezone.utc)  
     t0 = t1 - timedelta(days=cfg.days)
 
     print(f"[load] from {t0} to {t1}")
