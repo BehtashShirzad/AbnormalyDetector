@@ -195,6 +195,8 @@ def rabbit_channel():
     conn = pika.BlockingConnection(params)
     ch = conn.channel()
     ch.exchange_declare(exchange=INTEGRATION_EXCHANGE, exchange_type=INTEGRATION_EXCHANGE_TYPE, durable=True)
+    ch.queue_declare(queue="integrationQueue",durable=True)
+    ch.queue_bind(exchange=INTEGRATION_EXCHANGE,queue="integrationQueue",routing_key="")
     return conn, ch
 
 def publish_integration_event(ch, payload: dict):
