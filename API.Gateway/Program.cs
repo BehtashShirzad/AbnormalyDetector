@@ -39,6 +39,7 @@ builder.Services
     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
 
 var app = builder.Build();
+app.UseForwardedHeaders();
 app.UseMiddleware<RequestProcessorMiddleware>();
 // Middleware
 app.UseSwagger();
