@@ -403,9 +403,10 @@ public sealed class RequestProcessorMiddleware
     // ============================
     // Helpers
     // ============================
-    private static string GetClientIp(HttpContext context) =>
-        context.Connection.RemoteIpAddress?.MapToIPv4().ToString()??"unknown";
-
+    private static string GetClientIp(HttpContext context)
+    {
+        return context.Connection.RemoteIpAddress?.MapToIPv4().ToString() ?? "unknown";
+    }
     private static string? GetRequestId(HttpContext context) =>
         string.IsNullOrWhiteSpace(context.TraceIdentifier) ? null : context.TraceIdentifier;
 

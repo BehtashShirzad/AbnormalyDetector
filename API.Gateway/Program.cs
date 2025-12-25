@@ -1,4 +1,5 @@
 ﻿using API.Gateway;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using Yarp.ReverseProxy.Configuration;
@@ -9,6 +10,19 @@ var builder = WebApplication.CreateBuilder(args);
  
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders =
+        ForwardedHeaders.XForwardedFor |
+        ForwardedHeaders.XForwardedProto;
+     
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+
+  
+    options.ForwardLimit = 1;
+});
 
 builder.Services.AddSingleton<IConnection>(sp =>
 {
