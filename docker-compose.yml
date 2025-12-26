@@ -126,7 +126,7 @@
       LABEL_SEV: "3"
     volumes:
       - ./models:/models
-    command: ["/app/train_loop.sh"]
+    command: ["sh", "/app/train_loop.sh"]
     networks:
       - mynet
     restart: always
