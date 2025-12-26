@@ -10,6 +10,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 
 COPY . .
+RUN chmod +x train_loop.sh
 
 
 CMD ["python", "Worker.py"]
